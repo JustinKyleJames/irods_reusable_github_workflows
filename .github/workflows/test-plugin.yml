@@ -109,6 +109,15 @@ jobs:
           find "$test_output_dir" -name '*.xml' -type f | xargs grep -hC 1 '<skipped type'
           echo '--- SKIPPED TESTS (END) ---'
 
+          # Stage a flat copy of just the XML reports for upload. The raw output directory
+          # nests them under per-container log paths that include an ISO-8601 timestamp
+          # (colons and all) as a directory name, and actions/upload-artifact rejects any
+          # path containing a colon outright, even if only an ancestor directory has one.
+          xml_staging_dir="$(dirname "$test_output_dir")/plugin_test_output_xml"
+          mkdir -p "$xml_staging_dir"
+          find "$test_output_dir" -name '*.xml' -type f -exec cp {} "$xml_staging_dir/" \;
+          echo "xml_staging_dir=$xml_staging_dir" >> "$GITHUB_ENV"
+
           exit "$test_run_ec"
 
       - name: Upload test output
@@ -116,9 +125,6 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: test_output-${{ inputs.build_artifact_suffix }}-${{ inputs.irods_testing_environment_project_os }}-${{ inputs.irods_testing_environment_project_db }}
-          # Only the JUnit XML is uploaded, not the whole test_output_dir: it also
-          # contains per-container log directories with colons in their names
-          # (timestamped), which actions/upload-artifact rejects outright.
-          path: ${{ env.test_output_dir }}/**/*.xml
+          path: ${{ env.xml_staging_dir }}
           if-no-files-found: warn
           overwrite: true
