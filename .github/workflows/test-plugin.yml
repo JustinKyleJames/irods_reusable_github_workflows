@@ -63,6 +63,7 @@ jobs:
 
           # This directory will hold the output from the test run.
           test_output_dir="$(pwd)/plugin_test_output"
+          echo "test_output_dir=$test_output_dir" >> "$GITHUB_ENV"
 
           # The absolute path to the test hook from the checked out plugin repository.
           # If changes are made to the test hook, this path paired with the --test-hook-path
@@ -94,11 +95,14 @@ jobs:
           find "$test_output_dir" -name '*.xml' -type f | xargs grep -h '<testsuite '
           echo '--- TESTSUITE SUMMARY (END) ---'
 
-          # Print the failure info so that developers can determine what needs attention.
+          # Print the failure/error info so that developers can determine what needs attention.
+          # Both <failure> (AssertionError) and <error> (any other exception, e.g. raised in
+          # setUp/tearDown) tags are included, with enough context lines to show the actual
+          # exception, not just the top of the traceback.
           if [ "$test_run_ec" -ne 0 ]; then
-            echo '--- TEST FAILURES (BEGIN) ---'
-            find "$test_output_dir" -name '*.xml' -type f | xargs grep -hA 3 '<failure type'
-            echo '--- TEST FAILURES (END) ---'
+            echo '--- TEST FAILURES AND ERRORS (BEGIN) ---'
+            find "$test_output_dir" -name '*.xml' -type f | xargs grep -hA 20 -E '<failure type|<error type'
+            echo '--- TEST FAILURES AND ERRORS (END) ---'
           fi
 
           echo '--- SKIPPED TESTS (BEGIN) ---'
@@ -106,3 +110,12 @@ jobs:
           echo '--- SKIPPED TESTS (END) ---'
 
           exit "$test_run_ec"
+
+      - name: Upload test output
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test_output-${{ inputs.build_artifact_suffix }}-${{ inputs.irods_testing_environment_project_os }}-${{ inputs.irods_testing_environment_project_db }}
+          path: ${{ env.test_output_dir }}
+          if-no-files-found: warn
+          overwrite: true
