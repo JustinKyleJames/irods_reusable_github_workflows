@@ -116,6 +116,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: test_output-${{ inputs.build_artifact_suffix }}-${{ inputs.irods_testing_environment_project_os }}-${{ inputs.irods_testing_environment_project_db }}
-          path: ${{ env.test_output_dir }}
+          # Only the JUnit XML is uploaded, not the whole test_output_dir: it also
+          # contains per-container log directories with colons in their names
+          # (timestamped), which actions/upload-artifact rejects outright.
+          path: ${{ env.test_output_dir }}/**/*.xml
           if-no-files-found: warn
           overwrite: true
