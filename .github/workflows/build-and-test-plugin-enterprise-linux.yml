@@ -95,7 +95,7 @@ jobs:
   run_tests:
     needs: build_plugin
 
-    uses: JustinKyleJames/irods_reusable_github_workflows/.github/workflows/test-plugin.yml@main
+    uses: JustinKyleJames/irods_reusable_github_workflows/.github/workflows/test-plugin.yml@temporary_cascade_fix
     with:
       irods_package_version: ${{ inputs.irods_package_version }}
       build_artifact_suffix: ${{ inputs.build_artifact_suffix }}
