@@ -86,7 +86,7 @@ jobs:
             --plugin-package-directory .. \
             --output-directory "$test_output_dir" \
             --test-hook-path "$test_hook_path" \
-            -v
+            -vvv
           test_run_ec=$?
 
           # Print the summary line in each XML file. This line holds info like the number of passing,
