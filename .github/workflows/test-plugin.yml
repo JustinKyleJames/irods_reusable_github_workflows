@@ -109,6 +109,13 @@ jobs:
           find "$test_output_dir" -name '*.xml' -type f | xargs grep -hC 1 '<skipped type'
           echo '--- SKIPPED TESTS (END) ---'
 
+          # TEMPORARY DIAGNOSTIC - print any DIAG-tagged lines from the server's own rodsLog
+          # (plugin log calls go through rodsLog, not this process's stdout, so they never
+          # show up above no matter the log level).
+          echo '--- DIAG LOG LINES (BEGIN) ---'
+          find "$test_output_dir" -type f -exec grep -H "DIAG" {} \; 2>/dev/null
+          echo '--- DIAG LOG LINES (END) ---'
+
           # Stage a flat copy of just the XML reports for upload. The raw output directory
           # nests them under per-container log paths that include an ISO-8601 timestamp
           # (colons and all) as a directory name, and actions/upload-artifact rejects any
