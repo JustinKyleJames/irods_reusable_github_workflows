@@ -125,6 +125,15 @@ jobs:
           find "$test_output_dir" -name '*.xml' -type f -exec cp {} "$xml_staging_dir/" \;
           echo "xml_staging_dir=$xml_staging_dir" >> "$GITHUB_ENV"
 
+          # TEMPORARY DIAGNOSTIC - stage the raw per-container server logs (gathered as
+          # one .tar per container) for upload too, so a failure can be root-caused from
+          # the server's own rodsLog instead of only the client-visible test output. Same
+          # colon-in-ancestor-directory problem as above, so flatten into its own dir.
+          logs_staging_dir="$(dirname "$test_output_dir")/plugin_test_output_logs"
+          mkdir -p "$logs_staging_dir"
+          find "$test_output_dir" -name '*.tar' -type f -exec cp {} "$logs_staging_dir/" \;
+          echo "logs_staging_dir=$logs_staging_dir" >> "$GITHUB_ENV"
+
           exit "$test_run_ec"
 
       - name: Upload test output
@@ -133,5 +142,14 @@ jobs:
         with:
           name: test_output-${{ inputs.build_artifact_suffix }}-${{ inputs.irods_testing_environment_project_os }}-${{ inputs.irods_testing_environment_project_db }}
           path: ${{ env.xml_staging_dir }}
+          if-no-files-found: warn
+          overwrite: true
+
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: server_logs-${{ inputs.build_artifact_suffix }}-${{ inputs.irods_testing_environment_project_os }}-${{ inputs.irods_testing_environment_project_db }}
+          path: ${{ env.logs_staging_dir }}
           if-no-files-found: warn
           overwrite: true
